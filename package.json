@@ -1,0 +1,41 @@
+{
+  "name": "sitadairy",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx serverless offline",
+    "start:dev": "nodemon src/index.js",
+    "start": "node src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.6.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "get-stream": "^9.0.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.14.2",
+    "multer": "^2.0.0",
+    "nanoid": "^5.1.5",
+    "pdfkit": "^0.17.1",
+    "pdfkit-table": "^0.1.99",
+    "serverless-http": "^3.2.0",
+    "stream": "^0.0.3",
+    "streamifier": "^0.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "serverless-dotenv-plugin": "^6.0.0",
+    "serverless-offline": "^14.4.0"
+  }
+}

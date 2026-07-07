@@ -1,0 +1,11 @@
+services:
+  sitadairy:
+    image: santoshmanav/sitadairy:latest
+    container_name: sitadairy
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - MongoDbURI=
+      - JWT_SECRET_KEY=myjwtsecretisjwtsecret
+    restart: unless-stopped

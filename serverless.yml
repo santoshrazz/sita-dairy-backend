@@ -1,0 +1,55 @@
+service: Sita-Dairy
+provider:
+  name: aws
+  runtime: nodejs22.x
+  region: ap-south-1
+  stage: dev
+  environment:
+    NODE_ENV: development
+  apiGateway:
+    binaryMediaTypes:
+      - multipart/form-data
+      - application/octet-stream
+      - image/*
+      - application/pdf
+
+functions:
+  api:
+    handler: src/index.handler
+    timeout: 29
+    environment:
+      JWT_SECRET_KEY: ${env:JWT_SECRET_KEY}
+      CLOUDINERY_API_KEY: ${env:CLOUDINERY_API_KEY}
+      CLOUDINERY_API_SECRET: ${env:CLOUDINERY_API_SECRET}
+      CLOUDINERY_CLOUD_NAME: ${env:CLOUDINERY_CLOUD_NAME}
+      MongoDbURI: ${env:MongoDbURI}
+    events:
+      - http:
+          path: /{proxy+}
+          method: any
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
+custom:
+  serverless-offline:
+    useInProcess: false
+    httpPort: 8081
+    noPrependStageInUrl: true
+package:
+  exclude:
+    - .gitignore
+    - .env
+    - README.md
+  include:
+    - node_modules/**
+    - public/**

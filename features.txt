@@ -1,0 +1,67 @@
+ =========> Feature 1 <==============
+
+ app mein 'Shift-based Filtering' logic apply karna hai. Iska matlab hai ki agar main Morning shift select karu, toh list mein sirf vahi customers dikhne chahiye jinka shift profile mein 'Morning' ya 'Both' set hai. 'Evening' wale naam us waqt hide ho jaane chahiye.
+
+=========> Feature 2 <==============
+
+A. Fields to Edit 
+1. Profile Photo: (Change/Remove Photo)
+2. Full Name: (Edit Name)
+3. Mobile Number: (Edit Number)
+4. Guardian Name (Father/Husband):
+Correction: Add Checkboxes [ ] S/o [ ] W/o
+Requirement: Add a Text Box next to it to type the name.
+5. Address / Village: (Edit Village Name)
+6. Password: Edit 
+
+Bank Info
+Account Number
+IFSC Code
+Bank Name
+
+=========> Feature 3 <==============
+
+Admin Screen Lock
+
+=========> Feature 4 <==============
+Keep Screen On
+
+
+=========> Feature 5 <==============
+Milk Sale Entry section mein ye dono updates ek saath kar dijiye:
+Customer select karte hi uska Wallet Balance upar dikhna chahiye (Wallet Display on Selection).
+Wo balance Clickable ho, taaki us par click karte hi customer ki saari entry details (History) wahin dikh jayein."
+
+=========> Feature 6 <==============
+Wallet update mein ye points add kar dijiye: Milk Sale entry save hote hi amount automatically minus (-) yaani Debit ho jaye. History mein Debit amount Red aur Credit (jama) Green dikhna chahiye. Agar balance khatam ho jaye toh wo minus value mein show kare."
+
+=========> Feature 7 <==============
+customer ko app mein products toh dikh rahe hain, lekin saath mein 'History' ka option bhi side mein add kar dijiye. Jab wallet system add ho jaye, toh uske andar bhi history dikhni chahiye taaki customer dekh sake ki usne kaun sa product kab liya aur kitna paisa kata. Dono jagah se history access honi chahiye."
+
+=========> Feature 8 <==============
+Shubham bhai, app mein ek 'Low Balance Alert' ka system chahiye. Hum ek limit set kar sakein (jaise ₹100 ya ₹200), aur jaise hi kisi customer ka wallet balance usse niche jaye, toh mujhe aur customer dono ko notification mil jana chahiye. Isse payment mangne mein aasani hogi."
+
+=========> Feature 9 <==============
+Admin login ke liye 'Device Limit' set karni hai. Hum decide kar sakein ki admin account maximum kitne phones mein login ho sakta hai (jaise sirf 1 ya 2). Agar koi teesre phone se login kare, toh pehle wala apne aap logout ho jaye ya permission mange
+
+=========> Feature 10 <==============
+Rate Chart (Fat/SNF) mein humein Excel Upload ka option chahiye. Abhi jo hard coding hai use hata dijiye. Hum jab bhi Excel sheet upload karein, toh rate apne aap update ho jane chahiye taaki humein baar-baar aapki help na leni pade. Ek 'Sample Template' download karne ka bhi option dena."
+
+=========> Feature 11 <==============
+hamare paas jo DPU printer hai, use naye app ke saath connect karna hai. Pehle 'Meri Dairy' app se jo print nikalta tha, wahi same feature is app mein bhi chahiye. App mein Bluetooth printer ka option add kar dijiye taaki entry save hote hi turant slip nikal jaye."
+
+=========> Feature 12 <==============
+
+Milk Entry' (Buy aur Sell dono) wale section mein 'Edit' ka option add kar dijiye. Agar kabhi galti se galat weight ya rate enter ho jaye, to hum use baad mein sudhaar (edit) sakein."
+
+=========> Feature 13 <==============
+
+entry list mein data ka koi sequence nahi hai, entries kahin bhi upar-neeche ho jati hain. Humein 'Descending Order' (Time-wise sorting) chahiye. Iska matlab hai ki jo entry hum abhi karein, wo sabse upar dikhe aur purani entries uske neeche ek line se aani chahiye. List bilkul systematic honi chahiye."
+
+=========> Feature 14 <==============
+
+Edit wale section mein hi 'Share' ka button bhi chahiye. Isse agar koi customer zyada doodh deta hai, toh hum turant use WhatsApp par details bhej sakein taaki baad mein hisab saaf rahe.
+
+=========> Feature 15 <==============
+
+customer details wali screen par jahan 'Message' aur 'Records' ke button hain, wahan ek 'Map' ka logo add kar dijiye। Jab hum profile mein GPS coordinates (jaise 25.139438, 87.167101) save karein, toh wo number dikhne ki bajaye bas ye logo dikhna chahiye। Is logo par click karte hi Google Maps khul jaye taaki rasta dhundhne mein aasani ho।"

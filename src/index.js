@@ -10,4 +10,4 @@ await connectToDb().then(() => {
     console.log(`APP IS LISTNING AT ${PORT}`);
   });
 });
-export const handler = serverless(app);
+// export const handler = serverless(app);

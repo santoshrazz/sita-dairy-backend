@@ -33,10 +33,6 @@ const userSchema = new Schema(
     address: {
       type: String,
     },
-    walletAmount: {
-      type: Number,
-      default: 0,
-    },
     positionNo: {
       type: Number,
       default: 1,
@@ -93,7 +89,7 @@ const userSchema = new Schema(
     //     required: true
     // }
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 userSchema.pre("save", async function (next) {
@@ -104,9 +100,9 @@ userSchema.pre("save", async function (next) {
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
   try {
-    return bcryptjs.compare(candidatePassword, this.password);
+    return await bcryptjs.compare(candidatePassword, this.password);
   } catch (error) {
-    throw new Error("Password comparison failed");
+    throw new Error(`Password comparison failed ${error}`);
   }
 };
 

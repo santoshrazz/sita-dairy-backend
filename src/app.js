@@ -5,12 +5,11 @@ import cors from "cors";
 import { rateLimit } from "express-rate-limit";
 import { milkRouter } from "./routes/milk.route.js";
 import productRoute from "./routes/product.route.js";
-import paymentRoute from "./routes/payment.route.js";
 import rateChartRouter from "./routes/ratechart.route.js";
 import { generalRouter } from "./routes/general.route.js";
 
 const app = express();
-
+app.disabled("x-powered-by");
 // app.use((req, res, next) => {
 //   // serverless-http stores the original Lambda event at res.locals.serverless.event
 //   const lambdaEvent = res.locals.serverless?.event || {};
@@ -44,7 +43,7 @@ const app = express();
 //   return next();
 // });
 
-app.use(express.json({ limit: "16kb" }));
+app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 const corsOptions = {
@@ -63,12 +62,13 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 app.get("/", (req, res) => {
-  res.send("Hello From Santosh's Api And Deployed First PipeLine on 23-05-2026");
+  res.send(
+    "Hello From Santosh's Api And Deployed First PipeLine on 23-05-2026",
+  );
 });
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/milk", milkRouter);
 app.use("/api/v1/product", productRoute);
-app.use("/api/v1/payment", paymentRoute);
 app.use("/api/v1/ratechart", rateChartRouter);
 app.use("/api/v1/general", generalRouter);
 app.use(errorHandler);

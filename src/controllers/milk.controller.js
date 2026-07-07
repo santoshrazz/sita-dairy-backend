@@ -41,18 +41,13 @@ export const createMilkEntry = async (request, response, next) => {
       byUser: userId,
       entryType: "Buy",
     });
-    const userWalletAmount = Number(price);
-    await userModal.updateOne(
-      { _id: userId },
-      { $inc: { walletAmount: userWalletAmount } }
-    );
     response.status(200).json({
       success: true,
       message: "Milk Entry Created",
       data: createdEntry,
     });
   } catch (error) {
-    next(new ApiError("Error creating milk entry", 400));
+    next(new ApiError(error.message || "Error creating milk entry", 400));
   }
 };
 
@@ -62,7 +57,7 @@ export const updateMilkEntry = async (request, response, next) => {
     const id = request.params.id;
     if (!id) {
       return next(
-        new ApiError("Entry ID is required to update milk entry", 400)
+        new ApiError("Entry ID is required to update milk entry", 400),
       );
     }
 
@@ -95,7 +90,7 @@ export const updateMilkEntry = async (request, response, next) => {
       data: updatedEntry,
     });
   } catch (error) {
-    next(new ApiError("Error updating milk entry", 400));
+    next(new ApiError(error.message || "Error updating milk entry", 400));
   }
 };
 
@@ -105,7 +100,7 @@ export const deleteMilkEntry = async (request, response, next) => {
 
     if (!id) {
       return next(
-        new ApiError("Entry ID is required to delete milk entry", 400)
+        new ApiError("Entry ID is required to delete milk entry", 400),
       );
     }
 
@@ -121,7 +116,7 @@ export const deleteMilkEntry = async (request, response, next) => {
       data: deletedEntry,
     });
   } catch (error) {
-    next(new ApiError("Error deleting milk entry", 400));
+    next(new ApiError(error.message || "Error deleting milk entry", 400));
   }
 };
 
@@ -182,7 +177,7 @@ export const getMilkEntriesByUser = async (request, response, next) => {
       .sort({ date: -1 });
     response.status(200).json({ success: true, data: entries });
   } catch (error) {
-    next(new ApiError("Error retrieving milk entries", 400));
+    next(new ApiError(error.message || "Error retrieving milk entries", 400));
   }
 };
 
@@ -208,7 +203,7 @@ export const getMilkEntryById = async (request, response, next) => {
       message: "Entry retrived successfully",
     });
   } catch (error) {
-    next(new ApiError("Error retrieving milk entry", 400));
+    next(new ApiError(error.message || "Error retrieving milk entry", 400));
   }
 };
 
@@ -239,7 +234,7 @@ export const createMilkOrder = async (request, response, next) => {
       message: "Order Placed successfully",
     });
   } catch (error) {
-    next(new ApiError("error creating milk order", 400));
+    next(new ApiError(error.message || "error creating milk order", 400));
   }
 };
 export const getMilkOrder = async (request, response, next) => {
@@ -263,7 +258,7 @@ export const getMilkOrder = async (request, response, next) => {
       message: "Entry retrived successfully",
     });
   } catch (error) {
-    next(new ApiError("error getting milk order", 400));
+    next(new ApiError(error.message || "error getting milk order", 400));
   }
 };
 export const updateMilkOrderStatus = async (request, response, next) => {
@@ -276,7 +271,7 @@ export const updateMilkOrderStatus = async (request, response, next) => {
     const updatedMilk = await orderModal.findByIdAndUpdate(
       milkId,
       { status },
-      { runValidators: true, new: true }
+      { runValidators: true, new: true },
     );
 
     response.status(200).json({
@@ -285,7 +280,7 @@ export const updateMilkOrderStatus = async (request, response, next) => {
       data: updatedMilk,
     });
   } catch (error) {
-    return next(new ApiError("error getting milk order", 400));
+    return next(new ApiError(error.message || "error getting milk order", 400));
   }
 };
 export const deleteMilkOrder = async (request, response, next) => {
@@ -302,7 +297,7 @@ export const deleteMilkOrder = async (request, response, next) => {
       data: updatedMilk,
     });
   } catch (error) {
-    return next(new ApiError("error getting milk order", 400));
+    return next(new ApiError(error.message || "error getting milk order", 400));
   }
 };
 
@@ -336,18 +331,13 @@ export const sellMilk = async (request, response, next) => {
       byUser: userId,
       entryType: "Sell",
     });
-    const userWalletAmount = Number(price);
-    await userModal.updateOne(
-      { _id: userId },
-      { $inc: { walletAmount: -userWalletAmount } }
-    );
     response.status(200).json({
       success: true,
       message: "Milk Entry Created",
       data: createdEntry,
     });
   } catch (error) {
-    return next(new ApiError("error getting milk order", 400));
+    return next(new ApiError(error.message || "error getting milk order", 400));
   }
 };
 
@@ -357,7 +347,7 @@ export const updateSellMilkEntry = async (request, response, next) => {
     const id = request.params.id;
     if (!id) {
       return next(
-        new ApiError("Entry ID is required to update milk entry", 400)
+        new ApiError("Entry ID is required to update milk entry", 400),
       );
     }
 
@@ -388,7 +378,7 @@ export const updateSellMilkEntry = async (request, response, next) => {
       data: updatedEntry,
     });
   } catch (error) {
-    next(new ApiError("Error updating milk entry", 400));
+    next(new ApiError(error.message || "Error updating milk entry", 400));
   }
 };
 
@@ -398,7 +388,7 @@ export const deleteSellMilkEntry = async (request, response, next) => {
 
     if (!id) {
       return next(
-        new ApiError("Entry ID is required to delete milk entry", 400)
+        new ApiError("Entry ID is required to delete milk entry", 400),
       );
     }
 
@@ -414,7 +404,7 @@ export const deleteSellMilkEntry = async (request, response, next) => {
       data: deletedEntry,
     });
   } catch (error) {
-    next(new ApiError("Error deleting milk entry", 400));
+    next(new ApiError(error.message || "Error deleting milk entry", 400));
   }
 };
 
@@ -467,6 +457,6 @@ export const getSellMilkEntriesByUser = async (request, response, next) => {
 
     response.status(200).json({ success: true, data: entries });
   } catch (error) {
-    next(new ApiError("Error retrieving milk entries", 400));
+    next(new ApiError(error.message || "Error retrieving milk entries", 400));
   }
 };

@@ -18,6 +18,6 @@ milkRouter.get('/order', verifyUserToken, getMilkOrder)
 milkRouter.route('/sell')
     .get(verifyUserToken, getSellMilkEntriesByUser)
     .post(verifyUserToken, isAdmin, sellMilk)
-    .put(verifyUserToken, isAdmin, updateSellMilkEntry)
-    .delete(verifyUserToken, isAdmin, deleteSellMilkEntry)
+milkRouter.put('/sell/:id', verifyUserToken, isAdmin, updateSellMilkEntry);
+milkRouter.delete('/sell/:id', verifyUserToken, isAdmin, deleteSellMilkEntry);
 export { milkRouter }

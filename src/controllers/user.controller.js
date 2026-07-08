@@ -12,7 +12,7 @@ export const handleCreateUser = async (request, response, next) => {
     const isUserExists = await userModal.findOne({ mobile });
     if (isUserExists) {
       return next(
-        new ApiError("User already exists try logging into your account", 400)
+        new ApiError("User already exists try logging into your account", 400),
       );
     }
     const password = mobile.slice(0, 5);
@@ -37,6 +37,7 @@ export const handleCreateUser = async (request, response, next) => {
       mobile: newUser.mobile,
       role: newUser.role,
       profilePic: newUser.profilePic,
+      walletAmount: newUser.walletAmount,
     };
     const token = await newUser.generateAuthToken();
     newUser.token = token;
@@ -47,7 +48,7 @@ export const handleCreateUser = async (request, response, next) => {
       success: true,
     });
   } catch (error) {
-    console.log("error", error);
+    console.error("error", error);
     next(new ApiError("Error creating user", 400));
   }
 };
@@ -58,7 +59,7 @@ export const handleLoginUser = async (request, response, next) => {
     const user = await userModal.findOne({ mobile }).select("+password +role");
     if (!user && !user?.status) {
       return next(
-        new ApiError("User does not exist. Please register first.", 404)
+        new ApiError("User does not exist. Please register first.", 404),
       );
     }
     const isPasswordValid = await user.comparePassword(password);
@@ -73,6 +74,7 @@ export const handleLoginUser = async (request, response, next) => {
       mobile: user.mobile,
       role: user.role,
       profilePic: user.profilePic,
+      walletAmount: user.walletAmount,
     };
     response.status(200).json({
       success: true,
@@ -103,7 +105,7 @@ export const getAllCustomerList = async (request, response, next) => {
       users: allCustomers,
     });
   } catch (error) {
-    next(new ApiError("Error getting all customer list", 500));
+    next(new ApiError(error.message || error, 500));
   }
 };
 
@@ -126,7 +128,7 @@ export const getSingleCustomerDetail = async (request, response, next) => {
       user: userDetails,
     });
   } catch (error) {
-    next(new ApiError("Error getting single user details", 400));
+    next(new ApiError(error.message || error, 400));
   }
 };
 
@@ -150,7 +152,7 @@ export const getSingleCustomerDetailAdmin = async (request, response, next) => {
       entry: milkWithCustomer,
     });
   } catch (error) {
-    next(new ApiError("Error getting single user details", 400));
+    next(new ApiError(error.message || error, 400));
   }
 };
 
@@ -171,8 +173,9 @@ export const updateUserDetails = async (request, response, next) => {
       latitude,
       longitude,
       preferedShift,
+      allowNegativeBalance,
     } = request.body;
-    
+
     const updateData = {};
     if (userId) requestUserId = userId;
     if (!requestUserId) return next(new ApiError("userId is required", 400));
@@ -195,20 +198,22 @@ export const updateUserDetails = async (request, response, next) => {
     if (latitude) updateData.latitude = String(latitude);
     if (longitude) updateData.longitude = String(longitude);
     if (preferedShift) updateData.preferedShift = preferedShift;
+    if (allowNegativeBalance !== undefined)
+      updateData.allowNegativeBalance = allowNegativeBalance;
 
     const updatedUser = await userModal.findByIdAndUpdate(
       requestUserId,
       updateData,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
-    
+
     response.status(200).json({
       success: true,
       message: "User details updated successfully",
       user: updatedUser,
     });
   } catch (error) {
-    next(new ApiError("Error updating user details", 400));
+    next(new ApiError(error.message || error, 400));
   }
 };
 
@@ -231,7 +236,7 @@ export const updateAdminPassword = async (request, response, next) => {
     await currentUser.save();
     response.status(200).json({ success: true, message: "password updated" });
   } catch (error) {
-    next(new ApiError("Error while trying to update admin password", 500));
+    next(new ApiError(error.message || error, 500));
   }
 };
 
@@ -243,7 +248,7 @@ export const deleteUserAccount = async (request, response, next) => {
       .status(200)
       .json({ success: true, message: "Account Deactivated successfully" });
   } catch (error) {
-    return next(new ApiError("Error deleting user account", 400));
+    return next(new ApiError(error.message || error, 400));
   }
 };
 
@@ -258,22 +263,42 @@ export const dashboardData = async (request, response, next) => {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const startOfToday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      );
+      const endOfToday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+      );
 
       const monthlyData = await milkModal.find({
         date: { $gte: startOfMonth, $lte: endOfMonth },
       });
-      const totalMonthlyEarnings = monthlyData.reduce((acc, entry) => acc + parseFloat(entry.price), 0).toFixed(1);
-      const totalMonthlyMilk = monthlyData.reduce((acc, entry) => acc + parseFloat(entry.weight), 0).toFixed(1);
+      const totalMonthlyEarnings = monthlyData
+        .reduce((acc, entry) => acc + Number.parseFloat(entry.price), 0)
+        .toFixed(1);
+      const totalMonthlyMilk = monthlyData
+        .reduce((acc, entry) => acc + Number.parseFloat(entry.weight), 0)
+        .toFixed(1);
 
       const todayData = await milkModal.find({
         date: { $gte: startOfToday, $lt: endOfToday },
       });
-      const totalTodaysEarnings = todayData.reduce((acc, entry) => acc + parseFloat(entry.price), 0).toFixed(1);
-      const totalTodaysMilk = todayData.reduce((acc, entry) => acc + parseFloat(entry.weight), 0).toFixed(1);
-      const lastFiveEntries = await milkModal.find({}).sort({ date: -1 }).limit(5).populate("byUser", "name profilePic");
-      
+      const totalTodaysEarnings = todayData
+        .reduce((acc, entry) => acc + Number.parseFloat(entry.price), 0)
+        .toFixed(1);
+      const totalTodaysMilk = todayData
+        .reduce((acc, entry) => acc + Number.parseFloat(entry.weight), 0)
+        .toFixed(1);
+      const lastFiveEntries = await milkModal
+        .find({})
+        .sort({ date: -1 })
+        .limit(5)
+        .populate("byUser", "name profilePic");
+
       response.status(200).json({
         message: "Success",
         success: true,
@@ -284,25 +309,55 @@ export const dashboardData = async (request, response, next) => {
           totalTodaysMilk,
           totalTodaysEarnings,
           lastFiveEntries,
-        }
+        },
       });
     } else {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const startOfToday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      );
+      const endOfToday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+      );
 
-      const monthlyData = await milkModal.find({ byUser: userId, date: { $gte: startOfMonth, $lte: endOfMonth } });
-      const todayData = await milkModal.find({ byUser: userId, date: { $gte: startOfToday, $lt: endOfToday } });
-      const lastFiveEntries = await milkModal.find({ byUser: userId }).sort({ date: -1 }).limit(5).populate("byUser", "name profilePic");
+      const monthlyData = await milkModal.find({
+        byUser: userId,
+        date: { $gte: startOfMonth, $lte: endOfMonth },
+      });
+      const todayData = await milkModal.find({
+        byUser: userId,
+        date: { $gte: startOfToday, $lt: endOfToday },
+      });
+      const lastFiveEntries = await milkModal
+        .find({ byUser: userId })
+        .sort({ date: -1 })
+        .limit(5)
+        .populate("byUser", "name profilePic");
 
-      const totalMonthlyEarnings = monthlyData.reduce((acc, entry) => acc + parseFloat(entry.price), 0).toFixed(1);
-      const totalMonthlyMilk = monthlyData.reduce((acc, entry) => acc + parseFloat(entry.weight), 0).toFixed(1);
-      const totalTodaysEarnings = todayData.reduce((acc, entry) => acc + parseFloat(entry.price), 0).toFixed(1);
-      const totalTodaysMilk = todayData.reduce((acc, entry) => acc + parseFloat(entry.weight), 0).toFixed(1);
-      const todaysFatValues = todayData.map((entry) => parseFloat(entry.fat || 0));
-      const todaysSnfValues = todayData.map((entry) => parseFloat(entry.snf || 0));
+      const totalMonthlyEarnings = monthlyData
+        .reduce((acc, entry) => acc + Number.parseFloat(entry.price), 0)
+        .toFixed(1);
+      const totalMonthlyMilk = monthlyData
+        .reduce((acc, entry) => acc + Number.parseFloat(entry.weight), 0)
+        .toFixed(1);
+      const totalTodaysEarnings = todayData
+        .reduce((acc, entry) => acc + Number.parseFloat(entry.price), 0)
+        .toFixed(1);
+      const totalTodaysMilk = todayData
+        .reduce((acc, entry) => acc + Number.parseFloat(entry.weight), 0)
+        .toFixed(1);
+      const todaysFatValues = todayData.map((entry) =>
+        Number.parseFloat(entry.fat || 0),
+      );
+      const todaysSnfValues = todayData.map((entry) =>
+        Number.parseFloat(entry.snf || 0),
+      );
 
       response.status(200).json({
         message: "Success",
@@ -315,28 +370,35 @@ export const dashboardData = async (request, response, next) => {
           todaysFatValues,
           todaysSnfValues,
           lastFiveEntries,
-        }
+        },
       });
     }
   } catch (error) {
-    next(new ApiError("Error dashboard data", 400));
+    next(new ApiError(error.message || error, 400));
   }
 };
 
 export const createSeller = async (request, response, next) => {
   try {
     const { name, mobile } = request.body;
-    if (!name || !mobile) return next(new ApiError("Required info missing", 400));
+    if (!name || !mobile)
+      return next(new ApiError("Required info missing", 400));
     const isUserExists = await userModal.findOne({ mobile });
     if (isUserExists) return next(new ApiError("User already exists", 400));
-    
+
     const password = mobile.slice(0, 5);
     const createdUser = await userModal.create({
-      id: password, name, mobile, password, role: "Buyer"
+      id: password,
+      name,
+      mobile,
+      password,
+      role: "Buyer",
     });
-    const newUser = await userModal.findById(createdUser._id).select("-password -isVerified");
+    const newUser = await userModal
+      .findById(createdUser._id)
+      .select("-password -isVerified");
     const token = await newUser.generateAuthToken();
-    
+
     response.status(201).json({
       message: "User created",
       token,
@@ -344,7 +406,7 @@ export const createSeller = async (request, response, next) => {
       success: true,
     });
   } catch (error) {
-    next(new ApiError("Error creating buyer", 400));
+    next(new ApiError(error.message || error, 400));
   }
 };
 
@@ -352,12 +414,18 @@ export const changeUserRole = async (req, res, next) => {
   try {
     const allUsersToUpdate = JSON.parse(req.body.users);
     const updatePromises = allUsersToUpdate.map((user) => {
-      return userModal.findByIdAndUpdate(user.customerId, { role: user.role }, { new: true });
+      return userModal.findByIdAndUpdate(
+        user.customerId,
+        { role: user.role },
+        { new: true },
+      );
     });
     const updatedUsers = await Promise.all(updatePromises);
-    return res.status(200).json({ success: true, message: "Roles updated", users: updatedUsers });
+    return res
+      .status(200)
+      .json({ success: true, message: "Roles updated", users: updatedUsers });
   } catch (error) {
-    next(new ApiError("Error updating roles", 500));
+    next(new ApiError(error.message || error, 500));
   }
 };
 
@@ -368,6 +436,6 @@ export const changeUserPosition = async (req, res, next) => {
     }
     return res.status(200).json({ success: true, message: "Position updated" });
   } catch (error) {
-    next(new ApiError("Error updating position", 500));
+    next(new ApiError(error.message || error, 500));
   }
 };

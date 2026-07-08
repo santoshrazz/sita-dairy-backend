@@ -33,6 +33,14 @@ const userSchema = new Schema(
     address: {
       type: String,
     },
+    walletAmount: {
+      type: Number,
+      default: 0,
+    },
+    allowNegativeBalance: {
+      type: Boolean,
+      default: false,
+    },
     positionNo: {
       type: Number,
       default: 1,

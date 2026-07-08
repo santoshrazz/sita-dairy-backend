@@ -4,7 +4,7 @@ import { connectToDb } from "./db/connectToDb.js";
 import serverless from "serverless-http";
 
 dotenv.config({ path: "./.env" });
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 5002;
 await connectToDb().then(() => {
   app.listen(PORT, () => {
     console.log(`APP IS LISTNING AT ${PORT}`);

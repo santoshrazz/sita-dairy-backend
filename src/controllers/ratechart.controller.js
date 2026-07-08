@@ -20,7 +20,21 @@ export const getRateChart = async (request, response, next) => {
       row: rateChart,
     });
   } catch (error) {
-    next(new ApiError("Error creating milk entry", 400));
+    next(new ApiError(error.message || error, 400));
+  }
+};
+
+export const createRateChart = async (req, res, next) => {
+  try {
+    const newRate = await ratechartModal.create(req.body);
+    res.status(201).json({
+      success: true,
+      message: "Rate chart row created successfully",
+      data: newRate,
+    });
+  } catch (error) {
+    console.log("error", error);
+    next(new ApiError(error.message || error, 400));
   }
 };
 
@@ -37,10 +51,11 @@ export const updateRateChart = async (req, res, next) => {
     const updatedRate = await ratechartModal.findOneAndUpdate(
       { _id: id },
       { $set: updateData },
-      { new: true, upsert: true, runValidators: true }
+      { new: true, upsert: true, runValidators: true },
     );
 
     res.status(200).json({
+      success: true,
       message: "Rate chart updated successfully",
       data: updatedRate,
     });

@@ -11,7 +11,7 @@ Note: the previous wallet/payment feature (`walletAmount` on the user model, the
 ## Commands
 
 ```bash
-npm run start:dev   # run locally with nodemon (reads .env, listens on PORT or 8080)
+npm run start:dev   # run locally with nodemon (reads .env, listens on PORT or 5002)
 npm start            # run locally with plain node
 npm run dev          # run via `serverless offline` (simulates Lambda/API Gateway, port 8081 per serverless.yml)
 ```
@@ -42,3 +42,4 @@ Standard layered Express structure, all ES modules (`"type": "module"` in packag
 - A single `user` collection represents everyone (admins, farmers/sellers, buyers) — role-based access is enforced entirely in middleware/controllers via the `role` field, not via separate collections or Mongoose discriminators.
 - Money/weight/rate fields on `milk` and `order` schemas are stored as `String` (not `Number`) and parsed with `parseFloat`/`Number` in controllers when aggregated — keep this in mind when adding new numeric fields or aggregation logic.
 - `features.txt` at the repo root is a running wishlist of planned/requested features (in Hinglish) from the product owner — useful background context on where the app is headed, but not implemented yet.
+- `doc/workflow.md` traces actual request-level business logic (auth, milk entries vs. orders, dashboard aggregation, known rough edges) flow-by-flow — read it before changing behavior in `user`/`milk` controllers, since it documents intent and existing bugs that aren't obvious from the code alone.

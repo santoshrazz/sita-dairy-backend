@@ -1,9 +1,15 @@
+import mongoose from "mongoose";
 import { ApiError } from "../middleware/errorHandler.middleware.js";
 import { milkModal } from "../models/milk.modal.js";
 import { orderModal } from "../models/order.modal.js";
 import { userModal } from "../models/customer.modal.js";
+import {
+  applyMilkWalletEffect,
+  reverseMilkWalletEffect,
+} from "../utils/wallet.js";
 
 export const createMilkEntry = async (request, response, next) => {
+  const session = await mongoose.startSession();
   try {
     const { weight, price, snf, shift, rate, date, fat, userId } = request.body;
     if (
@@ -30,28 +36,45 @@ export const createMilkEntry = async (request, response, next) => {
       return next(new ApiError("Entry is already created", 400));
     }
 
-    const createdEntry = await milkModal.create({
-      weight,
-      price,
-      shift,
-      date: dateObj,
-      rate,
-      snf,
-      fat,
-      byUser: userId,
-      entryType: "Buy",
-    });
+    session.startTransaction();
+    const [createdEntry] = await milkModal.create(
+      [
+        {
+          weight,
+          price,
+          shift,
+          date: dateObj,
+          rate,
+          snf,
+          fat,
+          byUser: userId,
+          entryType: "Buy",
+        },
+      ],
+      { session },
+    );
+    await applyMilkWalletEffect(createdEntry, { session });
+    await session.commitTransaction();
+
     response.status(200).json({
       success: true,
       message: "Milk Entry Created",
       data: createdEntry,
     });
   } catch (error) {
-    next(new ApiError(error.message || "Error creating milk entry", 400));
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    next(
+      new ApiError(error.message || "Error creating milk entry", error.status || 400),
+    );
+  } finally {
+    session.endSession();
   }
 };
 
 export const updateMilkEntry = async (request, response, next) => {
+  const session = await mongoose.startSession();
   try {
     const { weight, price, snf, shift, fat, rate, userId, date } = request.body;
     const id = request.params.id;
@@ -59,6 +82,11 @@ export const updateMilkEntry = async (request, response, next) => {
       return next(
         new ApiError("Entry ID is required to update milk entry", 400),
       );
+    }
+
+    const existingEntry = await milkModal.findById(id);
+    if (!existingEntry) {
+      return next(new ApiError("Milk entry not found", 404));
     }
 
     const updatedData = {};
@@ -76,13 +104,31 @@ export const updateMilkEntry = async (request, response, next) => {
       updatedData.date = dateObj;
     }
 
+    const priceChanged =
+      price !== undefined && Number(price) !== Number(existingEntry.price);
+    const userChanged =
+      userId !== undefined && String(userId) !== String(existingEntry.byUser);
+
+    session.startTransaction();
+    if (priceChanged || userChanged) {
+      await reverseMilkWalletEffect(existingEntry, { session });
+      await applyMilkWalletEffect(
+        {
+          _id: existingEntry._id,
+          entryType: existingEntry.entryType,
+          byUser: userChanged ? userId : existingEntry.byUser,
+          price: priceChanged ? price : existingEntry.price,
+        },
+        { session },
+      );
+    }
+
     const updatedEntry = await milkModal.findByIdAndUpdate(id, updatedData, {
       new: true,
+      session,
     });
 
-    if (!updatedEntry) {
-      return next(new ApiError("Milk entry not found", 404));
-    }
+    await session.commitTransaction();
 
     response.status(200).json({
       success: true,
@@ -90,11 +136,19 @@ export const updateMilkEntry = async (request, response, next) => {
       data: updatedEntry,
     });
   } catch (error) {
-    next(new ApiError(error.message || "Error updating milk entry", 400));
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    next(
+      new ApiError(error.message || "Error updating milk entry", error.status || 400),
+    );
+  } finally {
+    session.endSession();
   }
 };
 
 export const deleteMilkEntry = async (request, response, next) => {
+  const session = await mongoose.startSession();
   try {
     const { id } = request.params;
 
@@ -104,11 +158,15 @@ export const deleteMilkEntry = async (request, response, next) => {
       );
     }
 
-    const deletedEntry = await milkModal.findByIdAndDelete(id);
-
-    if (!deletedEntry) {
+    const existingEntry = await milkModal.findById(id);
+    if (!existingEntry) {
       return next(new ApiError("Milk entry not found", 404));
     }
+
+    session.startTransaction();
+    await reverseMilkWalletEffect(existingEntry, { session });
+    const deletedEntry = await milkModal.findByIdAndDelete(id, { session });
+    await session.commitTransaction();
 
     response.status(200).json({
       success: true,
@@ -116,7 +174,14 @@ export const deleteMilkEntry = async (request, response, next) => {
       data: deletedEntry,
     });
   } catch (error) {
-    next(new ApiError(error.message || "Error deleting milk entry", 400));
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    next(
+      new ApiError(error.message || "Error deleting milk entry", error.status || 400),
+    );
+  } finally {
+    session.endSession();
   }
 };
 
@@ -304,6 +369,7 @@ export const deleteMilkOrder = async (request, response, next) => {
 // =====> Sell Milk Order <========
 
 export const sellMilk = async (request, response, next) => {
+  const session = await mongoose.startSession();
   try {
     const { weight, price, shift, rate, date, userId } = request.body;
     if (!weight || !price || !shift || !rate || !userId || !date) {
@@ -322,26 +388,51 @@ export const sellMilk = async (request, response, next) => {
       return next(new ApiError("Entry is already created", 400));
     }
 
-    const createdEntry = await milkModal.create({
-      weight,
-      price,
-      shift,
-      date: dateObj,
-      rate,
-      byUser: userId,
-      entryType: "Sell",
-    });
+    session.startTransaction();
+    const [createdEntry] = await milkModal.create(
+      [
+        {
+          weight,
+          price,
+          shift,
+          date: dateObj,
+          rate,
+          byUser: userId,
+          entryType: "Sell",
+        },
+      ],
+      { session },
+    );
+    await applyMilkWalletEffect(createdEntry, { session });
+    await session.commitTransaction();
+
     response.status(200).json({
       success: true,
       message: "Milk Entry Created",
       data: createdEntry,
     });
   } catch (error) {
-    return next(new ApiError(error.message || "error getting milk order", 400));
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    if (error.message === "Insufficient wallet balance") {
+      return next(
+        new ApiError(
+          "Insufficient wallet balance for this sale. Enable allowNegativeBalance for this customer or have them top up first.",
+          400,
+        ),
+      );
+    }
+    return next(
+      new ApiError(error.message || "error creating milk order", error.status || 400),
+    );
+  } finally {
+    session.endSession();
   }
 };
 
 export const updateSellMilkEntry = async (request, response, next) => {
+  const session = await mongoose.startSession();
   try {
     const { weight, price, shift, rate, userId, date } = request.body;
     const id = request.params.id;
@@ -349,6 +440,11 @@ export const updateSellMilkEntry = async (request, response, next) => {
       return next(
         new ApiError("Entry ID is required to update milk entry", 400),
       );
+    }
+
+    const existingEntry = await milkModal.findById(id);
+    if (!existingEntry) {
+      return next(new ApiError("Milk entry not found", 404));
     }
 
     const updatedData = {};
@@ -364,13 +460,31 @@ export const updateSellMilkEntry = async (request, response, next) => {
       updatedData.date = dateObj;
     }
 
+    const priceChanged =
+      price !== undefined && Number(price) !== Number(existingEntry.price);
+    const userChanged =
+      userId !== undefined && String(userId) !== String(existingEntry.byUser);
+
+    session.startTransaction();
+    if (priceChanged || userChanged) {
+      await reverseMilkWalletEffect(existingEntry, { session });
+      await applyMilkWalletEffect(
+        {
+          _id: existingEntry._id,
+          entryType: existingEntry.entryType,
+          byUser: userChanged ? userId : existingEntry.byUser,
+          price: priceChanged ? price : existingEntry.price,
+        },
+        { session },
+      );
+    }
+
     const updatedEntry = await milkModal.findByIdAndUpdate(id, updatedData, {
       new: true,
+      session,
     });
 
-    if (!updatedEntry) {
-      return next(new ApiError("Milk entry not found", 404));
-    }
+    await session.commitTransaction();
 
     response.status(200).json({
       success: true,
@@ -378,11 +492,27 @@ export const updateSellMilkEntry = async (request, response, next) => {
       data: updatedEntry,
     });
   } catch (error) {
-    next(new ApiError(error.message || "Error updating milk entry", 400));
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    if (error.message === "Insufficient wallet balance") {
+      return next(
+        new ApiError(
+          "Insufficient wallet balance for this sale. Enable allowNegativeBalance for this customer or have them top up first.",
+          400,
+        ),
+      );
+    }
+    next(
+      new ApiError(error.message || "Error updating milk entry", error.status || 400),
+    );
+  } finally {
+    session.endSession();
   }
 };
 
 export const deleteSellMilkEntry = async (request, response, next) => {
+  const session = await mongoose.startSession();
   try {
     const { id } = request.params;
 
@@ -392,11 +522,15 @@ export const deleteSellMilkEntry = async (request, response, next) => {
       );
     }
 
-    const deletedEntry = await milkModal.findByIdAndDelete(id);
-
-    if (!deletedEntry) {
+    const existingEntry = await milkModal.findById(id);
+    if (!existingEntry) {
       return next(new ApiError("Milk entry not found", 404));
     }
+
+    session.startTransaction();
+    await reverseMilkWalletEffect(existingEntry, { session });
+    const deletedEntry = await milkModal.findByIdAndDelete(id, { session });
+    await session.commitTransaction();
 
     response.status(200).json({
       success: true,
@@ -404,7 +538,14 @@ export const deleteSellMilkEntry = async (request, response, next) => {
       data: deletedEntry,
     });
   } catch (error) {
-    next(new ApiError(error.message || "Error deleting milk entry", 400));
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    next(
+      new ApiError(error.message || "Error deleting milk entry", error.status || 400),
+    );
+  } finally {
+    session.endSession();
   }
 };
 

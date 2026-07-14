@@ -19,7 +19,7 @@ const walletTransactionSchema = new Schema(
     },
     source: {
       type: String,
-      enum: ["MilkSell", "MilkBuy", "CashPayment", "Top-up"],
+      enum: ["MilkSell", "MilkBuy", "CashPayment", "Top-up", "ProductOrder"],
       required: true,
     },
     status: {
@@ -33,7 +33,7 @@ const walletTransactionSchema = new Schema(
     },
     refType: {
       type: String,
-      enum: ["milk", "walletTransaction"],
+      enum: ["milk", "walletTransaction", "productOrder"],
     },
     refId: {
       type: mongoose.Schema.Types.ObjectId,

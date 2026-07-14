@@ -19,8 +19,16 @@ const productSchema = new Schema({
         type: Boolean,
         default: true,
     },
+    isPopular: {
+        type: Boolean,
+        default: false,
+    },
     price: {
         type: Number
+    },
+    category: {
+        type: String,
+        enum: ["Dahi", "Milk", "Ghee", "Paneer", "Mawa"]
     }
 }, { timestamps: true })
 

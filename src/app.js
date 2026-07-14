@@ -8,6 +8,7 @@ import productRoute from "./routes/product.route.js";
 import rateChartRouter from "./routes/ratechart.route.js";
 import { generalRouter } from "./routes/general.route.js";
 import walletRoute from "./routes/wallet.route.js";
+import productOrderRoute from "./routes/productOrder.route.js";
 import {
   httpLogger,
   captureResponseBody,
@@ -89,5 +90,6 @@ app.use("/api/v1/product", productRoute);
 app.use("/api/v1/ratechart", rateChartRouter);
 app.use("/api/v1/general", generalRouter);
 app.use("/api/v1/wallet", walletRoute);
+app.use("/api/v1/product-orders", productOrderRoute);
 app.use(errorHandler);
 export { app };
